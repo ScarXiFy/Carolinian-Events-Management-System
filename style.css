@@ -655,7 +655,7 @@ footer {
    ========================================================================== */
 .dashboard-container {
     padding: 120px 5% 5rem;
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
 }
 .dashboard-header {
@@ -767,9 +767,8 @@ select.form-control {
     text-align: left;
 }
 .events-table th, .events-table td {
-    padding: 1.1rem 1.5rem;
+    padding: 1.1rem 1rem;
     border-bottom: 1px solid var(--border);
-    white-space: nowrap;
 }
 .events-table th {
     font-weight: 600;
@@ -778,7 +777,8 @@ select.form-control {
     font-size: 0.8rem;
     letter-spacing: 1.5px;
     background: rgba(255, 255, 255, 0.03);
-    padding: 1.2rem 1.5rem;
+    padding: 1.2rem 1rem;
+    white-space: nowrap;
 }
 .events-table tbody tr {
     transition: background 0.2s ease;
@@ -818,6 +818,9 @@ select.form-control {
 .status-Completed { background: rgba(229, 62, 62, 0.15); color: #FC8181; border: 1px solid rgba(229, 62, 62, 0.2); }
 
 /* Action Links */
+.action-links {
+    white-space: nowrap;
+}
 .action-links a {
     margin-right: 0.75rem;
     font-weight: 500;
@@ -1251,5 +1254,70 @@ select.form-control {
         top: 70%;
         z-index: -1; 
         opacity: 0.3; 
+    }
+
+    /* --- Dashboard Table to Cards --- */
+    .table-container {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+    }
+    .events-table thead {
+        display: none;
+    }
+    .events-table, .events-table tbody, .events-table tr, .events-table td {
+        display: block;
+        width: 100%;
+    }
+    .events-table tr {
+        margin-bottom: 1.5rem;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 0.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .events-table td {
+        text-align: right;
+        padding: 1rem 1rem 1rem 45%;
+        position: relative;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        min-height: 50px;
+        white-space: normal; /* allow wrapping on mobile */
+    }
+    .events-table td:last-child {
+        border-bottom: none;
+    }
+    .events-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 1rem;
+        width: 40%;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+    
+    /* Make Date & Time properly align in flex */
+    .events-table td[data-label="Date & Time"] {
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    /* Dashboard Controls Full Width */
+    .dashboard-controls .controls-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-input, .sort-select {
+        min-width: 100%;
     }
 }

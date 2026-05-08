@@ -147,10 +147,10 @@ Maps to: [Create-Event-Form-Wireframe.png](file:///d:/BS%20CpE%203rd%20Year%20(2
 - [x] Implement sorting (2 methods: by date, by name)
 
 ### Phase 5: Polish
-- [ ] Add status badge colors
-- [ ] Responsive design (mobile-friendly)
-- [ ] Flash messages for success/error
-- [ ] Final testing of all CRUD operations
+- [x] Add status badge colors
+- [x] Responsive design (mobile-friendly)
+- [x] Flash messages for success/error
+- [x] Final testing of all CRUD operations
 
 ### Phase 6: Documentation
 - [ ] Create ERD diagram

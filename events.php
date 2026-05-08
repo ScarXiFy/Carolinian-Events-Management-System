@@ -100,18 +100,18 @@ if ($result) {
                     <?php else: ?>
                         <?php foreach ($events as $index => $event): ?>
                             <tr>
-                                <td><?= $index + 1 ?></td>
-                                <td class="event-name-cell"><?= htmlspecialchars($event['event_name']) ?></td>
-                                <td>
+                                <td data-label="#"><?= $index + 1 ?></td>
+                                <td data-label="Event Name" class="event-name-cell"><?= htmlspecialchars($event['event_name']) ?></td>
+                                <td data-label="Date & Time">
                                     <?= date('M d, Y', strtotime($event['event_date'])) ?><br>
                                     <small class="time-muted"><?= date('h:i A', strtotime($event['event_time'])) ?></small>
                                 </td>
-                                <td><?= htmlspecialchars($event['location']) ?></td>
-                                <td><?= htmlspecialchars($event['category']) ?></td>
-                                <td>
+                                <td data-label="Location"><?= htmlspecialchars($event['location']) ?></td>
+                                <td data-label="Category"><?= htmlspecialchars($event['category']) ?></td>
+                                <td data-label="Status">
                                     <span class="status-badge status-<?= $event['status'] ?>"><?= $event['status'] ?></span>
                                 </td>
-                                <td class="action-links">
+                                <td data-label="Actions" class="action-links">
                                     <a href="view.php?id=<?= $event['id'] ?>" class="action-view">View</a>
                                     <a href="update.php?id=<?= $event['id'] ?>" class="action-edit">Edit</a>
                                     <a href="#" onclick="confirmDelete(<?= $event['id'] ?>)" class="action-delete">Delete</a>

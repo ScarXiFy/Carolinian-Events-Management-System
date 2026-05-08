@@ -123,18 +123,18 @@ if ($mode === 'dashboard') {
                     <?php else: ?>
                         <?php foreach ($events as $index => $ev): ?>
                             <tr>
-                                <td><?= $index + 1 ?></td>
-                                <td class="event-name-cell"><?= htmlspecialchars($ev['event_name']) ?></td>
-                                <td>
+                                <td data-label="#"><?= $index + 1 ?></td>
+                                <td data-label="Event Name" class="event-name-cell"><?= htmlspecialchars($ev['event_name']) ?></td>
+                                <td data-label="Date & Time">
                                     <?= date('M d, Y', strtotime($ev['event_date'])) ?><br>
                                     <small class="time-muted"><?= date('h:i A', strtotime($ev['event_time'])) ?></small>
                                 </td>
-                                <td><?= htmlspecialchars($ev['location']) ?></td>
-                                <td><?= htmlspecialchars($ev['category']) ?></td>
-                                <td>
+                                <td data-label="Location"><?= htmlspecialchars($ev['location']) ?></td>
+                                <td data-label="Category"><?= htmlspecialchars($ev['category']) ?></td>
+                                <td data-label="Status">
                                     <span class="status-badge status-<?= $ev['status'] ?>"><?= $ev['status'] ?></span>
                                 </td>
-                                <td class="action-links">
+                                <td data-label="Actions" class="action-links">
                                     <a href="view.php?id=<?= $ev['id'] ?>" class="action-view">View</a>
                                     <a href="update.php?id=<?= $ev['id'] ?>" class="action-edit">Edit</a>
                                     <a href="#" onclick="confirmDelete(<?= $ev['id'] ?>)" class="action-delete">Delete</a>
