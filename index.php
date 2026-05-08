@@ -51,7 +51,7 @@ if (file_exists($dbConfigPath)) {
             <div class="nav-links">
                 <a href="#">Home</a>
                 <a href="#features">Features</a>
-                <a href="events.php">Dashboard</a>
+                <a href="view.php">Events Dashboard</a>
             </div>
         </div>
     </nav>
