@@ -990,6 +990,11 @@ select.form-control {
     border-color: var(--primary-light);
     background: rgba(255, 255, 255, 0.05);
 }
+/* Force native date/time picker icons to white (dark color scheme) */
+input[type="date"].form-control,
+input[type="time"].form-control {
+    color-scheme: dark;
+}
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1011,6 +1016,46 @@ select.form-control {
     justify-content: flex-end;
     gap: 1rem;
     margin-top: 2rem;
+}
+
+/* Status hint text */
+.status-hint {
+    display: block;
+    margin-top: 0.4rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.7;
+}
+
+/* Auto-status color coding */
+.status-auto {
+    font-weight: 600;
+    cursor: default;
+}
+.status-auto-upcoming {
+    color: #63B3ED !important;
+    border-color: rgba(49, 130, 206, 0.4) !important;
+    background: rgba(49, 130, 206, 0.08) !important;
+}
+.status-auto-ongoing {
+    color: #81B29A !important;
+    border-color: rgba(45, 106, 79, 0.4) !important;
+    background: rgba(45, 106, 79, 0.08) !important;
+}
+.status-auto-completed {
+    color: #FC8181 !important;
+    border-color: rgba(229, 62, 62, 0.4) !important;
+    background: rgba(229, 62, 62, 0.08) !important;
+}
+
+/* "Other" custom input field animation */
+.other-input {
+    animation: slideDown 0.25s ease-out;
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {

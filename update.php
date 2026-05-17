@@ -16,9 +16,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = $conn->real_escape_string($_POST['description']);
     $event_date = $conn->real_escape_string($_POST['event_date']);
     $event_time = $conn->real_escape_string($_POST['event_time']);
-    $location = $conn->real_escape_string($_POST['location']);
-    $category = $conn->real_escape_string($_POST['category']);
-    $status = $conn->real_escape_string($_POST['status']);
+    // Category: final value is resolved by JS into the hidden 'category' field
+    $category = isset($_POST['category']) ? $conn->real_escape_string(trim($_POST['category'])) : 'Other';
+
+    // Handle location: use custom input if "Other" selected
+    $rawLocation = isset($_POST['location_select']) ? trim($_POST['location_select']) : '';
+    if ($rawLocation === 'Other' && isset($_POST['location_other']) && trim($_POST['location_other']) !== '') {
+        $location = $conn->real_escape_string(trim($_POST['location_other']));
+    } elseif ($rawLocation !== '') {
+        $location = $conn->real_escape_string($rawLocation);
+    } else {
+        $location = '';
+    }
+
+    // Auto-compute status based on event date & time
+    $eventDateTime = new DateTime("$event_date $event_time");
+    $now = new DateTime();
+    $eventDateOnly = (new DateTime($event_date))->format('Y-m-d');
+    $todayOnly = $now->format('Y-m-d');
+
+    if ($eventDateOnly < $todayOnly) {
+        $status = 'Completed';
+    } elseif ($eventDateOnly === $todayOnly) {
+        if ($eventDateTime <= $now) {
+            $status = 'Completed';
+        } else {
+            $status = 'Ongoing';
+        }
+    } else {
+        $status = 'Upcoming';
+    }
 
     if (empty($event_name) || empty($organizer) || empty($event_date) || empty($event_time) || empty($location)) {
         $error = "Please fill in all required fields.";
@@ -108,28 +135,44 @@ if ($result && $result->num_rows > 0) {
                 </div>
 
                 <div class="form-group">
-                    <label for="location">Location *</label>
-                    <input type="text" id="location" name="location" class="form-control" value="<?= htmlspecialchars($event['location']) ?>" required>
+                    <label for="location_select">Location *</label>
+                    <?php
+                    $presetLocations = ['Bunzel Building', 'Rigney Hall', 'LRC Building', 'SMED Building', 'PE Building', 'SAFAD Theatre', 'MR Hall', 'Basketball Court', 'Soccer Field'];
+                    $currentLocation = $event['location'];
+                    $isCustomLocation = !in_array($currentLocation, $presetLocations);
+                    ?>
+                    <select id="location_select" name="location_select" class="form-control" required>
+                        <option value="" disabled>Select a location</option>
+                        <?php foreach ($presetLocations as $loc): ?>
+                            <option value="<?= $loc ?>" <?= ($currentLocation === $loc) ? 'selected' : '' ?>><?= $loc ?></option>
+                        <?php endforeach; ?>
+                        <option value="Other" <?= $isCustomLocation ? 'selected' : '' ?>>Other</option>
+                    </select>
+                    <input type="text" id="location_other" name="location_other" class="form-control other-input" placeholder="Enter custom location" style="display:<?= $isCustomLocation ? 'block' : 'none' ?>; margin-top:0.5rem;" value="<?= $isCustomLocation ? htmlspecialchars($currentLocation) : '' ?>">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="category">Category</label>
-                        <select id="category" name="category" class="form-control">
-                            <option value="Academic" <?= $event['category'] == 'Academic' ? 'selected' : '' ?>>Academic</option>
-                            <option value="Cultural" <?= $event['category'] == 'Cultural' ? 'selected' : '' ?>>Cultural</option>
-                            <option value="Sports" <?= $event['category'] == 'Sports' ? 'selected' : '' ?>>Sports</option>
-                            <option value="Social" <?= $event['category'] == 'Social' ? 'selected' : '' ?>>Social</option>
-                            <option value="Other" <?= $event['category'] == 'Other' ? 'selected' : '' ?>>Other</option>
+                        <label for="category_select">Category</label>
+                        <?php
+                        $presetCategories = ['Academic', 'Cultural', 'Sports', 'Social'];
+                        $currentCategory = $event['category'];
+                        $isCustomCategory = !in_array($currentCategory, $presetCategories);
+                        ?>
+                        <select id="category_select" name="category_select" class="form-control">
+                            <?php foreach ($presetCategories as $cat): ?>
+                                <option value="<?= $cat ?>" <?= ($currentCategory === $cat) ? 'selected' : '' ?>><?= $cat ?></option>
+                            <?php endforeach; ?>
+                            <option value="Other" <?= $isCustomCategory ? 'selected' : '' ?>>Other</option>
                         </select>
+                        <input type="text" id="category_other" name="category_other" class="form-control other-input" placeholder="Enter custom category" style="display:<?= $isCustomCategory ? 'block' : 'none' ?>; margin-top:0.5rem;" value="<?= $isCustomCategory ? htmlspecialchars($currentCategory) : '' ?>">
+                        <input type="hidden" id="category_final" name="category" value="<?= htmlspecialchars($currentCategory) ?>">
                     </div>
                     <div class="form-group">
-                        <label for="status">Status</label>
-                        <select id="status" name="status" class="form-control">
-                            <option value="Upcoming" <?= $event['status'] == 'Upcoming' ? 'selected' : '' ?>>Upcoming</option>
-                            <option value="Ongoing" <?= $event['status'] == 'Ongoing' ? 'selected' : '' ?>>Ongoing</option>
-                            <option value="Completed" <?= $event['status'] == 'Completed' ? 'selected' : '' ?>>Completed</option>
-                        </select>
+                        <label for="status_display">Status</label>
+                        <input type="text" id="status_display" class="form-control" value="<?= htmlspecialchars($event['status']) ?>" readonly>
+                        <input type="hidden" id="status" name="status" value="<?= htmlspecialchars($event['status']) ?>">
+                        <small class="status-hint">Auto-set based on event date & time</small>
                     </div>
                 </div>
 

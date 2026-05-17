@@ -165,9 +165,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const orbitCards = [];
 
         let eventsData = [
-            { id: 1, name: "USC Intramurals Opening", date: "OCT 24", time: "9:00 AM", status: "Completed", statusDot: "#E53E3E", colorClass: "glow-red" },
-            { id: 2, name: "CES Leadership Summit", date: "NOV 02", time: "1:00 PM", status: "Ongoing", statusDot: "#2D6A4F", colorClass: "glow-green" },
-            { id: 3, name: "CpE 3rd Year Gen Assembly", date: "NOV 15", time: "3:30 PM", status: "Upcoming", statusDot: "#3182CE", colorClass: "glow-blue" }
+            { id: 1, name: "CpE 3rd Year 2nd Semester", date: "JUN 01", time: "11:59 PM", status: "Ongoing", statusDot: "#2D6A4F", colorClass: "glow-green" },
+            { id: 2, name: "Proposal Hearing", date: "MAY 08", time: "10:00 AM", status: "Completed", statusDot: "#E53E3E", colorClass: "glow-red" },
+            { id: 3, name: "John Enico's Birthday", date: "AUG 28", time: "8:28 PM", status: "Upcoming", statusDot: "#3182CE", colorClass: "glow-blue" }
         ];
 
         if (rawDbEvents && rawDbEvents.length > 0) {
@@ -361,7 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
             organizer:  { label: 'Organizer',  minLength: 2 },
             event_date: { label: 'Event Date', type: 'date' },
             event_time: { label: 'Event Time', type: 'time' },
-            location:   { label: 'Location',   minLength: 2 }
+            location_select: { label: 'Location', minLength: 1 }
         };
 
         const showFieldError = (input, message) => {
@@ -404,12 +404,143 @@ document.addEventListener("DOMContentLoaded", () => {
                 const input = eventForm.querySelector(`[name="${name}"]`);
                 if (input && !validateField(name, input)) isValid = false;
             });
+
+            // Validate custom location if "Other" is selected
+            const locSelect = eventForm.querySelector('#location_select');
+            const locOther = eventForm.querySelector('#location_other');
+            if (locSelect && locSelect.value === 'Other' && locOther && !locOther.value.trim()) {
+                showFieldError(locOther, 'Please enter a custom location.');
+                isValid = false;
+            }
+
+            // Validate custom category if "Other" is selected
+            const catSelect = eventForm.querySelector('#category_select');
+            const catOther = eventForm.querySelector('#category_other');
+            if (catSelect && catSelect.value === 'Other' && catOther && !catOther.value.trim()) {
+                showFieldError(catOther, 'Please enter a custom category.');
+                isValid = false;
+            }
+
             if (!isValid) {
                 e.preventDefault();
                 const firstError = eventForm.querySelector('.form-control-error');
                 if (firstError) { firstError.focus(); firstError.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
             }
         });
+    }
+
+
+    // =========================================================================
+    // 8b. "Other" Toggle for Location & Category Dropdowns
+    // =========================================================================
+    const locationSelect = document.getElementById('location_select');
+    const locationOther = document.getElementById('location_other');
+    if (locationSelect && locationOther) {
+        const toggleLocation = () => {
+            if (locationSelect.value === 'Other') {
+                locationOther.style.display = 'block';
+                locationOther.required = true;
+                locationSelect.removeAttribute('required');
+            } else {
+                locationOther.style.display = 'none';
+                locationOther.required = false;
+                locationOther.value = '';
+            }
+        };
+        locationSelect.addEventListener('change', toggleLocation);
+        // Run on load for edit pages with pre-selected "Other"
+        toggleLocation();
+    }
+
+    const categorySelect = document.getElementById('category_select');
+    const categoryOther = document.getElementById('category_other');
+    const categoryHidden = document.getElementById('category_final');
+    if (categorySelect && categoryOther && categoryHidden) {
+        const syncCategoryHidden = () => {
+            if (categorySelect.value === 'Other' && categoryOther.value.trim()) {
+                categoryHidden.value = categoryOther.value.trim();
+            } else if (categorySelect.value === 'Other') {
+                categoryHidden.value = 'Other';
+            } else {
+                categoryHidden.value = categorySelect.value;
+            }
+        };
+
+        const toggleCategory = () => {
+            if (categorySelect.value === 'Other') {
+                categoryOther.style.display = 'block';
+                categoryOther.required = true;
+            } else {
+                categoryOther.style.display = 'none';
+                categoryOther.required = false;
+                categoryOther.value = '';
+            }
+            syncCategoryHidden();
+        };
+        categorySelect.addEventListener('change', toggleCategory);
+        categoryOther.addEventListener('input', syncCategoryHidden);
+        categoryOther.addEventListener('change', syncCategoryHidden);
+        toggleCategory();
+
+        // Failsafe: sync hidden field right before form submits
+        const parentForm = categorySelect.closest('form');
+        if (parentForm) {
+            parentForm.addEventListener('submit', () => {
+                syncCategoryHidden();
+            });
+        }
+    }
+
+
+    // =========================================================================
+    // 8c. Auto-Compute Status from Event Date & Time
+    // =========================================================================
+    const eventDateInput = document.getElementById('event_date');
+    const eventTimeInput = document.getElementById('event_time');
+    const statusHidden = document.getElementById('status');
+    const statusDisplay = document.getElementById('status_display');
+
+    if (eventDateInput && eventTimeInput && statusHidden && statusDisplay) {
+        const computeStatus = () => {
+            const dateVal = eventDateInput.value;
+            const timeVal = eventTimeInput.value;
+
+            if (!dateVal || !timeVal) {
+                statusDisplay.value = '\u2014';
+                statusHidden.value = 'Upcoming';
+                statusDisplay.className = 'form-control';
+                return;
+            }
+
+            const now = new Date();
+            const eventDateTime = new Date(`${dateVal}T${timeVal}`);
+            const eventDateOnly = dateVal;
+            const todayOnly = now.toISOString().slice(0, 10);
+
+            let status;
+            if (eventDateOnly < todayOnly) {
+                status = 'Completed';
+            } else if (eventDateOnly === todayOnly) {
+                if (eventDateTime <= now) {
+                    status = 'Completed';
+                } else {
+                    status = 'Ongoing';
+                }
+            } else {
+                status = 'Upcoming';
+            }
+
+            statusHidden.value = status;
+            statusDisplay.value = status;
+
+            // Update visual style
+            statusDisplay.className = 'form-control status-auto status-auto-' + status.toLowerCase();
+        };
+
+        eventDateInput.addEventListener('change', computeStatus);
+        eventTimeInput.addEventListener('change', computeStatus);
+        // Run on page load (for edit pages)
+        computeStatus();
     }
 
 
