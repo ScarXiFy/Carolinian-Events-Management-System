@@ -8,6 +8,34 @@ $dbConfigPath = __DIR__ . '/dbconfig.php';
 if (file_exists($dbConfigPath)) {
     include $dbConfigPath;
     if (isset($conn) && $conn) {
+        // Auto-sync all event statuses based on current date/time
+        $now = new DateTime();
+        $todayOnly = $now->format('Y-m-d');
+        $allEvents = $conn->query("SELECT id, event_date, event_time, status FROM events");
+        if ($allEvents) {
+            while ($ev = $allEvents->fetch_assoc()) {
+                $evDateOnly = $ev['event_date'];
+                $evDateTime = new DateTime($ev['event_date'] . ' ' . $ev['event_time']);
+                $newStatus = $ev['status'];
+
+                if ($evDateOnly < $todayOnly) {
+                    $newStatus = 'Completed';
+                } elseif ($evDateOnly === $todayOnly) {
+                    if ($evDateTime <= $now) {
+                        $newStatus = 'Completed';
+                    } else {
+                        $newStatus = 'Ongoing';
+                    }
+                } else {
+                    $newStatus = 'Upcoming';
+                }
+
+                if ($newStatus !== $ev['status']) {
+                    $conn->query("UPDATE events SET status='$newStatus' WHERE id=" . intval($ev['id']));
+                }
+            }
+        }
+
         $result = $conn->query("SELECT COUNT(*) AS count FROM events");
         if ($result) $totalEvents = $result->fetch_assoc()['count'];
         $result = $conn->query("SELECT COUNT(*) AS count FROM events WHERE status = 'Upcoming'");

@@ -11,9 +11,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = $conn->real_escape_string($_POST['description']);
     $event_date = $conn->real_escape_string($_POST['event_date']);
     $event_time = $conn->real_escape_string($_POST['event_time']);
-    $location = $conn->real_escape_string($_POST['location']);
-    $category = $conn->real_escape_string($_POST['category']);
-    $status = $conn->real_escape_string($_POST['status']);
+
+    // Category: final value is resolved by JS into the hidden 'category' field
+    $category = isset($_POST['category']) ? $conn->real_escape_string(trim($_POST['category'])) : 'Other';
+
+    // Handle location: use custom input if "Other" selected
+    $rawLocation = isset($_POST['location_select']) ? trim($_POST['location_select']) : '';
+    if ($rawLocation === 'Other' && isset($_POST['location_other']) && trim($_POST['location_other']) !== '') {
+        $location = $conn->real_escape_string(trim($_POST['location_other']));
+    } elseif ($rawLocation !== '') {
+        $location = $conn->real_escape_string($rawLocation);
+    } else {
+        $location = '';
+    }
+
+    // Auto-compute status based on event date & time
+    $eventDateTime = new DateTime("$event_date $event_time");
+    $now = new DateTime();
+    $eventDateOnly = (new DateTime($event_date))->format('Y-m-d');
+    $todayOnly = $now->format('Y-m-d');
+
+    if ($eventDateOnly < $todayOnly) {
+        $status = 'Completed';
+    } elseif ($eventDateOnly === $todayOnly) {
+        // Same day: check if event time has passed
+        if ($eventDateTime <= $now) {
+            $status = 'Completed';
+        } else {
+            $status = 'Ongoing';
+        }
+    } else {
+        $status = 'Upcoming';
+    }
 
     if (empty($event_name) || empty($organizer) || empty($event_date) || empty($event_time) || empty($location)) {
         $error = "Please fill in all required fields.";
@@ -86,28 +115,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="form-group">
-                    <label for="location">Location *</label>
-                    <input type="text" id="location" name="location" class="form-control" required>
+                    <label for="location_select">Location *</label>
+                    <select id="location_select" name="location_select" class="form-control" required>
+                        <option value="" disabled selected>Select a location</option>
+                        <option value="Bunzel Building">Bunzel Building</option>
+                        <option value="Rigney Hall">Rigney Hall</option>
+                        <option value="LRC Building">LRC Building</option>
+                        <option value="SMED Building">SMED Building</option>
+                        <option value="PE Building">PE Building</option>
+                        <option value="SAFAD Theatre">SAFAD Theatre</option>
+                        <option value="MR Hall">MR Hall</option>
+                        <option value="Basketball Court">Basketball Court</option>
+                        <option value="Soccer Field">Soccer Field</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" id="location_other" name="location_other" class="form-control other-input" placeholder="Enter custom location" style="display:none; margin-top:0.5rem;">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="category">Category</label>
-                        <select id="category" name="category" class="form-control">
+                        <label for="category_select">Category</label>
+                        <select id="category_select" name="category_select" class="form-control">
                             <option value="Academic">Academic</option>
                             <option value="Cultural">Cultural</option>
                             <option value="Sports">Sports</option>
                             <option value="Social">Social</option>
                             <option value="Other">Other</option>
                         </select>
+                        <input type="text" id="category_other" name="category_other" class="form-control other-input" placeholder="Enter custom category" style="display:none; margin-top:0.5rem;">
+                        <input type="hidden" id="category_final" name="category" value="Academic">
                     </div>
                     <div class="form-group">
-                        <label for="status">Status</label>
-                        <select id="status" name="status" class="form-control">
-                            <option value="Upcoming">Upcoming</option>
-                            <option value="Ongoing">Ongoing</option>
-                            <option value="Completed">Completed</option>
-                        </select>
+                        <label for="status_display">Status</label>
+                        <input type="text" id="status_display" class="form-control" value="—" readonly>
+                        <input type="hidden" id="status" name="status" value="Upcoming">
+                        <small class="status-hint">Auto-set based on event date & time</small>
                     </div>
                 </div>
 
