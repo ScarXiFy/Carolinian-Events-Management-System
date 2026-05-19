@@ -33,11 +33,7 @@ CREATE TABLE IF NOT EXISTS events (
     location    VARCHAR(255)    NOT NULL,
     category    ENUM('Academic', 'Cultural', 'Sports', 'Social', 'Other')
                                 NOT NULL DEFAULT 'Academic',
-<<<<<<< HEAD
-    status      ENUM('Upcoming', 'Ongoing', 'Completed', 'Cancelled')
-=======
     status      ENUM('Upcoming', 'Ongoing', 'Completed')
->>>>>>> b6d8f39d7b9c7356426c192296dedbeaf7067196
                                 NOT NULL DEFAULT 'Upcoming',
     created_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
 
@@ -66,11 +62,7 @@ INSERT INTO events (event_name, organizer, description, event_date, event_time, 
     'CPE Department',
     'Annual thesis and capstone proposal hearing for 3rd year Computer Engineering students. Present your project proposals to the panel.',
     '2026-05-08',
-<<<<<<< HEAD
-    '15:30:00',
-=======
     '10:00:00',
->>>>>>> b6d8f39d7b9c7356426c192296dedbeaf7067196
     'Bunzel Building',
     'Academic',
     'Ongoing'
