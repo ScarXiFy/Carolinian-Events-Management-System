@@ -12,8 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $event_date = $conn->real_escape_string($_POST['event_date']);
     $event_time = $conn->real_escape_string($_POST['event_time']);
 
-    // Category: final value is resolved by JS into the hidden 'category' field
-    $category = isset($_POST['category']) ? $conn->real_escape_string(trim($_POST['category'])) : 'Other';
+    // Category: use custom input when "Other" is selected
+    $rawCategory = isset($_POST['category_select']) ? trim($_POST['category_select']) : '';
+    if ($rawCategory === 'Other' && isset($_POST['category_other']) && trim($_POST['category_other']) !== '') {
+        $category = $conn->real_escape_string(trim($_POST['category_other']));
+    } elseif ($rawCategory !== '') {
+        $category = $conn->real_escape_string($rawCategory);
+    } else {
+        $category = 'Academic';
+    }
 
     // Handle location: use custom input if "Other" selected
     $rawLocation = isset($_POST['location_select']) ? trim($_POST['location_select']) : '';

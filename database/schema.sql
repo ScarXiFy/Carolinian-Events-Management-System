@@ -31,8 +31,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_date  DATE            NOT NULL,
     event_time  TIME            NOT NULL,
     location    VARCHAR(255)    NOT NULL,
-    category    ENUM('Academic', 'Cultural', 'Sports', 'Social', 'Other')
-                                NOT NULL DEFAULT 'Academic',
+    category    VARCHAR(255)    NOT NULL DEFAULT 'Academic',
     status      ENUM('Upcoming', 'Ongoing', 'Completed')
                                 NOT NULL DEFAULT 'Upcoming',
     created_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,

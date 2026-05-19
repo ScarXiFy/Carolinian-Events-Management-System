@@ -43,4 +43,14 @@ if ($conn->connect_error) {
 
 // Set charset to UTF-8 for proper character handling
 $conn->set_charset("utf8mb4");
+
+// Keep older local databases compatible with custom event categories.
+// Previous schemas used an ENUM, which cannot store custom "Other" text.
+$categoryColumn = $conn->query("SHOW COLUMNS FROM events LIKE 'category'");
+if ($categoryColumn && $categoryColumn->num_rows > 0) {
+    $column = $categoryColumn->fetch_assoc();
+    if (isset($column['Type']) && stripos($column['Type'], 'enum(') === 0) {
+        $conn->query("ALTER TABLE events MODIFY category VARCHAR(255) NOT NULL DEFAULT 'Academic'");
+    }
+}
 ?>
