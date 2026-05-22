@@ -1,17 +1,16 @@
 <?php
 $dbConfigPath = __DIR__ . '/dbconfig.php';
 require_once $dbConfigPath;
+require_once __DIR__ . '/event_helpers.php';
 
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $event_name = $conn->real_escape_string($_POST['event_name']);
-    $organizer = $conn->real_escape_string($_POST['organizer']);
-    $description = $conn->real_escape_string($_POST['description']);
-    $event_date = $conn->real_escape_string($_POST['event_date']);
-    $event_time = $conn->real_escape_string($_POST['event_time']);
+    $event = event_build_form_data($_POST);
+    $error = event_validate_form_data($event);
 
+<<<<<<< HEAD
     // Category: use custom input when "Other" is selected
     $rawCategory = isset($_POST['category_select']) ? trim($_POST['category_select']) : '';
     if ($rawCategory === 'Other' && isset($_POST['category_other']) && trim($_POST['category_other']) !== '') {
@@ -30,38 +29,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $location = $conn->real_escape_string($rawLocation);
     } else {
         $location = '';
+=======
+    if ($error === '' && event_duplicate_exists($conn, $event)) {
+        $error = event_duplicate_message();
+>>>>>>> origin/enricode-Laptop
     }
 
-    // Auto-compute status based on event date & time
-    $eventDateTime = new DateTime("$event_date $event_time");
-    $now = new DateTime();
-    $eventDateOnly = (new DateTime($event_date))->format('Y-m-d');
-    $todayOnly = $now->format('Y-m-d');
+    if ($error === '') {
+        $status = event_compute_status($event['event_date'], $event['event_time']);
+        $query = "INSERT INTO events (event_name, organizer, description, event_date, event_time, location, category, status)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($query);
 
-    if ($eventDateOnly < $todayOnly) {
-        $status = 'Completed';
-    } elseif ($eventDateOnly === $todayOnly) {
-        // Same day: check if event time has passed
-        if ($eventDateTime <= $now) {
-            $status = 'Completed';
-        } else {
-            $status = 'Ongoing';
-        }
-    } else {
-        $status = 'Upcoming';
-    }
-
-    if (empty($event_name) || empty($organizer) || empty($event_date) || empty($event_time) || empty($location)) {
-        $error = "Please fill in all required fields.";
-    } else {
-        $query = "INSERT INTO events (event_name, organizer, description, event_date, event_time, location, category, status) 
-                  VALUES ('$event_name', '$organizer', '$description', '$event_date', '$event_time', '$location', '$category', '$status')";
-        
-        if ($conn->query($query)) {
-            header("Location: view.php?success=created");
-            exit;
-        } else {
+        if (!$stmt) {
             $error = "Error creating event: " . $conn->error;
+        } else {
+            $stmt->bind_param(
+                'ssssssss',
+                $event['event_name'],
+                $event['organizer'],
+                $event['description'],
+                $event['event_date'],
+                $event['event_time'],
+                $event['location'],
+                $event['category'],
+                $status
+            );
+
+            if ($stmt->execute()) {
+                header("Location: view.php?success=created");
+                exit;
+            } else {
+                $error = "Error creating event: " . $stmt->error;
+            }
+
+            $stmt->close();
         }
     }
 }
@@ -91,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1>Create New Event</h1>
             
             <?php if ($error): ?>
-                <div class="alert alert-error"><?= $error ?></div>
+                <div class="alert alert-error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
 
             <form action="create.php" method="POST">

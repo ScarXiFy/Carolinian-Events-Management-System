@@ -31,12 +31,17 @@ CREATE TABLE IF NOT EXISTS events (
     event_date  DATE            NOT NULL,
     event_time  TIME            NOT NULL,
     location    VARCHAR(255)    NOT NULL,
+<<<<<<< HEAD
     category    VARCHAR(255)    NOT NULL DEFAULT 'Academic',
+=======
+    category    VARCHAR(255)    NOT NULL DEFAULT 'Other',
+>>>>>>> origin/enricode-Laptop
     status      ENUM('Upcoming', 'Ongoing', 'Completed')
                                 NOT NULL DEFAULT 'Upcoming',
     created_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE KEY unique_event_slot (event_name, event_date, location)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------
