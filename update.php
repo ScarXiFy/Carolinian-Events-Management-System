@@ -1,6 +1,7 @@
 <?php
 $dbConfigPath = __DIR__ . '/dbconfig.php';
 require_once $dbConfigPath;
+require_once __DIR__ . '/event_helpers.php';
 
 $error = '';
 
@@ -11,69 +12,70 @@ if (!isset($_GET['id'])) {
 $id = intval($_GET['id']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $event_name = $conn->real_escape_string($_POST['event_name']);
-    $organizer = $conn->real_escape_string($_POST['organizer']);
-    $description = $conn->real_escape_string($_POST['description']);
-    $event_date = $conn->real_escape_string($_POST['event_date']);
-    $event_time = $conn->real_escape_string($_POST['event_time']);
-    // Category: final value is resolved by JS into the hidden 'category' field
-    $category = isset($_POST['category']) ? $conn->real_escape_string(trim($_POST['category'])) : 'Other';
+    $event = event_build_form_data($_POST);
+    $error = event_validate_form_data($event);
 
-    // Handle location: use custom input if "Other" selected
-    $rawLocation = isset($_POST['location_select']) ? trim($_POST['location_select']) : '';
-    if ($rawLocation === 'Other' && isset($_POST['location_other']) && trim($_POST['location_other']) !== '') {
-        $location = $conn->real_escape_string(trim($_POST['location_other']));
-    } elseif ($rawLocation !== '') {
-        $location = $conn->real_escape_string($rawLocation);
-    } else {
-        $location = '';
+    if ($error === '' && event_duplicate_exists($conn, $event, $id)) {
+        $error = event_duplicate_message();
     }
 
-    // Auto-compute status based on event date & time
-    $eventDateTime = new DateTime("$event_date $event_time");
-    $now = new DateTime();
-    $eventDateOnly = (new DateTime($event_date))->format('Y-m-d');
-    $todayOnly = $now->format('Y-m-d');
+    if ($error === '') {
+        $status = event_compute_status($event['event_date'], $event['event_time']);
+        $query = "UPDATE events SET
+                    event_name = ?,
+                    organizer = ?,
+                    description = ?,
+                    event_date = ?,
+                    event_time = ?,
+                    location = ?,
+                    category = ?,
+                    status = ?
+                  WHERE id = ?";
+        $stmt = $conn->prepare($query);
 
-    if ($eventDateOnly < $todayOnly) {
-        $status = 'Completed';
-    } elseif ($eventDateOnly === $todayOnly) {
-        if ($eventDateTime <= $now) {
-            $status = 'Completed';
-        } else {
-            $status = 'Ongoing';
-        }
-    } else {
-        $status = 'Upcoming';
-    }
-
-    if (empty($event_name) || empty($organizer) || empty($event_date) || empty($event_time) || empty($location)) {
-        $error = "Please fill in all required fields.";
-    } else {
-        $query = "UPDATE events SET 
-                    event_name='$event_name', 
-                    organizer='$organizer', 
-                    description='$description', 
-                    event_date='$event_date', 
-                    event_time='$event_time', 
-                    location='$location', 
-                    category='$category', 
-                    status='$status' 
-                  WHERE id=$id";
-        
-        if ($conn->query($query)) {
-            header("Location: view.php?success=updated");
-            exit;
-        } else {
+        if (!$stmt) {
             $error = "Error updating event: " . $conn->error;
+        } else {
+            $stmt->bind_param(
+                'ssssssssi',
+                $event['event_name'],
+                $event['organizer'],
+                $event['description'],
+                $event['event_date'],
+                $event['event_time'],
+                $event['location'],
+                $event['category'],
+                $status,
+                $id
+            );
+
+            if ($stmt->execute()) {
+                header("Location: view.php?success=updated");
+                exit;
+            } else {
+                $error = "Error updating event: " . $stmt->error;
+            }
+
+            $stmt->close();
         }
     }
 }
 
 // Fetch current data
-$result = $conn->query("SELECT * FROM events WHERE id=$id");
+$stmt = $conn->prepare("SELECT * FROM events WHERE id = ?");
+if ($stmt) {
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = false;
+}
+
 if ($result && $result->num_rows > 0) {
     $event = $result->fetch_assoc();
+    if (isset($stmt)) {
+        $stmt->close();
+    }
 } else {
     header("Location: view.php");
     exit;
@@ -104,7 +106,7 @@ if ($result && $result->num_rows > 0) {
             <h1>Edit Event</h1>
             
             <?php if ($error): ?>
-                <div class="alert alert-error"><?= $error ?></div>
+                <div class="alert alert-error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
 
             <form action="update.php?id=<?= $id ?>" method="POST">
